@@ -202,10 +202,42 @@ def funcUseSharedConstant():
     return True
 
 
+def funcUseDeletedSharedConstant():
+    # Tries to retrieve a deleted variable, should timeout
+    shared.deleteConst('myVar')
+    shared.deleteConst('secondVar')
+    timeout = 0.01
+    assert shared.getConst('myVar', timeout=timeout) is None
+    assert shared.getConst('secondVar', timeout=timeout) is None
+    try:
+        # You should not be able to reset a deleted variable
+        shared.setConst(myVar=42)
+        return False
+    except TypeError:
+        pass
+    return True
+
+
 def funcUseSharedFunction():
     assert shared.getConst('myRemoteFunc')(5) == 5 * 5
     assert shared.getConst('myRemoteFunc')(25) == 25 * 25
     return True
+
+
+def funcDeleteSharedConstant():
+    """Tests if shared constants can be deleted.
+
+    First runs the test that creates constants and
+    tests for *local* deletion afterwards.
+
+    """
+    result = funcSharedConstant()
+    for _ in range(100):
+        try:
+            result &= futures.submit(funcUseDeletedSharedConstant).result()
+        except AssertionError:
+            result = False
+    return result
 
 
 def funcSharedConstant():
@@ -635,6 +667,10 @@ class TestShared(TestScoopCommon):
 
     def test_shareFunction(self):
         result = futures._startup(funcSharedConstant)
+        self.assertEqual(result, True)
+
+    def test_deleteConstant(self):
+        result = futures._startup(funcDeleteSharedConstant)
         self.assertEqual(result, True)
 
 

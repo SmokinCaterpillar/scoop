@@ -137,6 +137,19 @@ def getConst(name, timeout=0.1):
         time.sleep(0.01)
 
 
+def deleteConst(name):
+    """Deletes a constant with a particular `name` on the current worker.
+
+    Deletion does **not** propagate to other workers.
+    Deleted variables can also not be reset by `setConst`.
+
+    """
+    for key in elements:
+        var_dict = elements[key]
+        if name in var_dict:
+            var_dict[name] = None
+
+
 class SharedElementEncapsulation(object):
     """Encapsulates a reference to an element available in the shared module.
 
